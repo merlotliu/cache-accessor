@@ -14,12 +14,42 @@ Cache Accessor 是一个 Chrome 扩展，用于查看和管理浏览器的 Cache
 1. **下载代码**
    - 克隆或下载本仓库到本地
 
+   ```bash
+   git clone <repository-url>
+   # 或直接下载ZIP文件并解压
+   ```
+
 2. **安装扩展**
    - 打开Chrome浏览器
    - 访问 `chrome://extensions/`
    - 开启右上角的"开发者模式"
    - 点击"加载已解压的扩展程序"
-   - 选择项目文件夹
+   - 选择包含 manifest.json 的项目文件夹
+
+3. **验证安装**
+   - 成功安装后，Chrome工具栏会出现扩展图标
+   - 如果没有看到图标，点击工具栏的扩展按钮(拼图图标)，将Cache Accessor固定到工具栏
+
+## 常见问题
+1. **找不到扩展图标？**
+   - 点击Chrome工具栏的扩展按钮(拼图图标)
+   - 找到"Cache Accessor"
+   - 点击图钉图标将其固定到工具栏
+
+2. **加载失败？**
+   - 确保项目文件夹包含完整的文件：
+     - manifest.json
+     - popup.html
+     - background.js
+     - popup.js
+     - styles/popup.css
+     - icons/*.png
+   - 检查Chrome控制台是否有错误信息
+
+3. **更新扩展**
+   - 修改代码后，回到扩展管理页面
+   - 点击扩展卡片上的刷新图标
+   - 或重新加载扩展
 
 ## 使用方法
 1. **访问网站**
