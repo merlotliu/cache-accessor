@@ -1,0 +1,15 @@
+{
+  "name": "perfetto-view-helper",
+  "version": "1.0.0",
+  "description": "## 项目简介 Cache Accessor 是一个 Chrome 扩展，用于查看和管理浏览器的 Cache Storage 数据。它提供了直观的界面来浏览、搜索和导出缓存数据。",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "canvas": "^3.0.0"
+  }
+}
