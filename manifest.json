@@ -20,16 +20,7 @@
     "action": {
         "default_popup": "popup.html",
         "default_icon": {
-            "16": "icons/icon16.png",
-            "32": "icons/icon32.png",
-            "48": "icons/icon48.png",
-            "128": "icons/icon128.png"
+            "16": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAAAbwAAAG8B8aLcQwAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAB8SURBVDiN7ZOxCYAwEEXfKWldwBWcQBdwB0FXsLSME+gYWtqmUFAwXAJBuEjgqgv/8+F/+MUJ/QMgaSRpknQAi5k9KgnMbAcuIBxXSZukDQjADESgBXpJc+F8BlbgAWwFLyFPXkR09ZwBejPr8t5F7pK2kuZ3sf/+xE4YgDQK5WgYZQAAAABJRU5ErkJggg=="
         }
-    },
-    "icons": {
-        "16": "icons/icon16.png",
-        "32": "icons/icon32.png",
-        "48": "icons/icon48.png",
-        "128": "icons/icon128.png"
     }
 }
