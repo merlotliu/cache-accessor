@@ -27,26 +27,40 @@ class CacheAccessor {
 
             // 获取当前标签页信息
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            if (!tab) {
+                throw new Error('无法获取当前标签页信息');
+            }
+
             const url = new URL(tab.url);
+            console.log('Current tab URL:', url.toString());
             
             // 发送消息给background script获取缓存数据
+            console.log('Requesting caches for origin:', url.origin);
             const caches = await chrome.runtime.sendMessage({
                 action: 'getCaches',
                 origin: url.origin
             });
 
-            this.renderCaches(caches);
+            console.log('Received caches:', caches);
+            this.renderCaches(caches || []);
         } catch (error) {
+            console.error('加载缓存失败:', error);
             this.showError('加载缓存失败: ' + error.message);
         }
     }
 
     renderCaches(caches) {
+        if (!Array.isArray(caches) || caches.length === 0) {
+            this.cacheList.innerHTML = '<div class="empty">没有找到缓存数据</div>';
+            this.updateStatus(0, 0);
+            return;
+        }
+
         this.cacheList.innerHTML = '';
         let totalSize = 0;
 
         caches.forEach(cache => {
-            totalSize += cache.size;
+            totalSize += cache.size || 0;
             const cacheItem = this.createCacheItem(cache);
             this.cacheList.appendChild(cacheItem);
         });
@@ -135,7 +149,12 @@ class CacheAccessor {
     }
 }
 
-// 初始化应用
+// 初始化应用并添加错误处理
 document.addEventListener('DOMContentLoaded', () => {
-    new CacheAccessor();
+    try {
+        new CacheAccessor();
+    } catch (error) {
+        console.error('初始化失败:', error);
+        document.body.innerHTML = `<div class="error">初始化失败: ${error.message}</div>`;
+    }
 }); 
