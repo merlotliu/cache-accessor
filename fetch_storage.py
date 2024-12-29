@@ -1,8 +1,5 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from pathlib import Path
 import json
 import time
@@ -13,72 +10,68 @@ class StorageDataFetcher:
         self.options = Options()
         self.extension_path = os.path.abspath(extension_path)
         self.options.add_argument(f'--load-extension={self.extension_path}')
-        # 添加额外的Chrome选项
-        self.options.add_argument('--no-sandbox')
-        self.options.add_argument('--disable-dev-shm-usage')
-        self.options.add_argument('--remote-debugging-port=9222')
         self.driver = None
 
     def setup(self):
         self.driver = webdriver.Chrome(options=self.options)
-        # 启用必要的CDP域
-        self.driver.execute_cdp_cmd('Network.enable', {})
-        time.sleep(2)
+        time.sleep(2)  # 等待扩展加载
 
     def fetch_storage_data(self, url):
         try:
             print(f"Fetching data from: {url}")
             self.driver.get(url)
-            time.sleep(5)  # 等待页面加载
+            time.sleep(5)  # 等待页面和缓存加载
 
-            # 获取所有存储类型
-            storage_types = self.driver.execute_cdp_cmd('Storage.getStorageKeyForFrame', {})
-            result = {
-                'caches': []
-            }
+            # 直接调用扩展的API获取数据
+            script = """
+                return new Promise((resolve) => {
+                    // 获取当前标签页的origin
+                    const origin = window.location.origin;
+                    
+                    // 获取所有已加载的扩展
+                    chrome.management.getAll((extensions) => {
+                        // 找到我们的扩展
+                        const ourExtension = extensions.find(ext => ext.name === 'Cache Accessor');
+                        if (!ourExtension) {
+                            resolve({ success: false, error: 'Extension not found' });
+                            return;
+                        }
+                        
+                        // 调用扩展的消息接口
+                        chrome.runtime.sendMessage(
+                            ourExtension.id,
+                            { 
+                                action: 'getStorageData',
+                                origin: origin
+                            },
+                            (response) => {
+                                console.log('Extension response:', response);
+                                resolve(response);
+                            }
+                        );
+                    });
+                });
+            """
 
-            # 获取Cache Storage数据
-            caches = self.driver.execute_cdp_cmd('CacheStorage.requestCacheNames', {
-                'securityOrigin': url
-            })
+            print("Executing script to fetch data...")
+            result = self.driver.execute_script(script)
+            print(f"Received data from extension: {result}")
 
-            for cache in caches.get('caches', []):
-                cache_data = {
-                    'name': cache.get('cacheName', ''),
-                    'entries': []
-                }
-
-                # 获取缓存条目
-                cache_entries = self.driver.execute_cdp_cmd('CacheStorage.requestEntries', {
-                    'cacheId': cache.get('cacheId', ''),
-                    'skipCount': 0,
-                    'pageSize': 100  # 限制条目数量
-                })
-
-                for entry in cache_entries.get('cacheDataEntries', []):
-                    cache_data['entries'].append({
-                        'url': entry.get('requestURL', ''),
-                        'type': entry.get('responseType', 'unknown'),
-                        'size': entry.get('responseSize', 0),
-                        'headers': entry.get('responseHeaders', {})
-                    })
-
-                if cache_data['entries']:
-                    result['caches'].append(cache_data)
-
-            print(f"Found {len(result['caches'])} caches")
-            return result
+            if result and result.get('success'):
+                return result['data']
+            else:
+                print(f"Failed to get data: {result.get('error', 'Unknown error')}")
+                return None
 
         except Exception as e:
             print(f"Error fetching storage data: {e}")
-            # 打印详细的错误信息
             import traceback
             traceback.print_exc()
             return None
 
     def save_to_file(self, data, filename):
-        with open(filename, 'w') as f:
-            json.dump(data, indent=2, fp=f)
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, indent=2, fp=f, ensure_ascii=False)
         print(f"Data saved to: {filename}")
 
     def cleanup(self):
@@ -93,9 +86,9 @@ def main():
     fetcher = StorageDataFetcher(extension_path)
     
     try:
-        print("Setting up...")
+        print("Setting up Chrome with extension...")
         fetcher.setup()
-        print("Fetching data...")
+        print("Fetching data from website...")
         data = fetcher.fetch_storage_data(url)
         if data:
             output_file = 'storage_data.json'
