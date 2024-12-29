@@ -5,6 +5,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 });
 
+// 添加一个新的消息处理方法，用于外部调用
+chrome.runtime.onMessageExternal.addListener(
+    async (request, sender, sendResponse) => {
+        if (request.action === 'getStorageData') {
+            try {
+                const data = await handleGetStorageData(request.origin);
+                sendResponse({ success: true, data });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message });
+            }
+            return true;
+        }
+    }
+);
+
 async function handleGetStorageData(origin) {
     try {
         const storageData = {
