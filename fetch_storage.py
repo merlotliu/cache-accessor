@@ -21,9 +21,8 @@ class StorageDataFetcher:
 
     def setup(self):
         self.driver = webdriver.Chrome(options=self.options)
-        # 启用CDP
+        # 启用必要的CDP域
         self.driver.execute_cdp_cmd('Network.enable', {})
-        self.driver.execute_cdp_cmd('Storage.enable', {})
         time.sleep(2)
 
     def fetch_storage_data(self, url):
@@ -32,38 +31,36 @@ class StorageDataFetcher:
             self.driver.get(url)
             time.sleep(5)  # 等待页面加载
 
-            # 使用CDP获取缓存数据
-            cache_storage = self.driver.execute_cdp_cmd('Storage.getCacheStorageList', {})
+            # 获取所有存储类型
+            storage_types = self.driver.execute_cdp_cmd('Storage.getStorageKeyForFrame', {})
             result = {
                 'caches': []
             }
 
-            for cache in cache_storage.get('storages', []):
+            # 获取Cache Storage数据
+            caches = self.driver.execute_cdp_cmd('CacheStorage.requestCacheNames', {
+                'securityOrigin': url
+            })
+
+            for cache in caches.get('caches', []):
                 cache_data = {
-                    'name': cache['cacheName'],
+                    'name': cache.get('cacheName', ''),
                     'entries': []
                 }
 
                 # 获取缓存条目
-                entries = self.driver.execute_cdp_cmd(
-                    'Storage.getCacheStorageEntries',
-                    {'cacheId': cache['id']}
-                )
+                cache_entries = self.driver.execute_cdp_cmd('CacheStorage.requestEntries', {
+                    'cacheId': cache.get('cacheId', ''),
+                    'skipCount': 0,
+                    'pageSize': 100  # 限制条目数量
+                })
 
-                for entry in entries.get('cacheEntries', []):
-                    response = self.driver.execute_cdp_cmd(
-                        'Storage.getCacheStorageEntry',
-                        {
-                            'cacheId': cache['id'],
-                            'requestURL': entry['requestURL']
-                        }
-                    )
-
+                for entry in cache_entries.get('cacheDataEntries', []):
                     cache_data['entries'].append({
-                        'url': entry['requestURL'],
-                        'type': response.get('responseType', 'unknown'),
-                        'size': response.get('responseSize', 0),
-                        'headers': response.get('responseHeaders', {})
+                        'url': entry.get('requestURL', ''),
+                        'type': entry.get('responseType', 'unknown'),
+                        'size': entry.get('responseSize', 0),
+                        'headers': entry.get('responseHeaders', {})
                     })
 
                 if cache_data['entries']:
@@ -74,6 +71,9 @@ class StorageDataFetcher:
 
         except Exception as e:
             print(f"Error fetching storage data: {e}")
+            # 打印详细的错误信息
+            import traceback
+            traceback.print_exc()
             return None
 
     def save_to_file(self, data, filename):
@@ -105,6 +105,8 @@ def main():
             print("Failed to fetch data")
     except Exception as e:
         print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
     finally:
         print("Cleaning up...")
         fetcher.cleanup()
